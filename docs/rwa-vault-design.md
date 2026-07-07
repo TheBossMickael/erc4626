@@ -149,24 +149,25 @@ in `threat-model.md`).
 ## Components & file layout
 
 ```
-src/
-  RWAVault.sol          # OZ ERC4626 + 7540 layer + epoch machine
-  NAVOracle.sol         # simulated T-Bill accrual (rate, time scale, shocks)
-  Escrow.sol            # vault-only custody of pending + claimable funds
-  interfaces/
-    IERC7540.sol        # IERC7540Operator / Deposit / Redeem (per EIP)
-    IERC7575.sol
-  mocks/
-    MockUSDC.sol        # 6-decimals asset, faucet mint for demo
-    TBillToken.sol      # mock security, primary market at oracle price
-test/
-  unit/                 # lifecycle, cancellation, access control, ERC-165
-  invariant/            # epoch fairness, solvency (see docs/invariants.md)
-  helpers/
-script/
-  Deploy.s.sol
-docs/
+contracts/              # Foundry project
+  src/
+    RWAVault.sol        # OZ ERC4626 + 7540 layer + epoch machine
+    NAVOracle.sol       # simulated T-Bill accrual (rate, time scale, shocks)
+    Escrow.sol          # vault-only custody of pending + claimable funds
+    interfaces/
+      IERC7540.sol      # IERC7540Operator / Deposit / Redeem (per EIP)
+      IERC7575.sol
+    mocks/
+      MockUSDC.sol      # 6-decimals asset, faucet mint for demo
+      TBillToken.sol    # mock security, primary market at oracle price
+  test/
+    unit/               # lifecycle, cancellation, access control, ERC-165
+    invariant/          # epoch fairness, solvency (see docs/invariants.md)
+    helpers/
+  script/
+    Deploy.s.sol
 frontend/               # React/wagmi (separate phase)
+docs/                   # design docs (repo root — not forge doc output)
 ```
 
 ## Demo parameters (indicative)
