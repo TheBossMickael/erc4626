@@ -79,6 +79,12 @@ safe if someone wires a hooked ERC-20 (e.g. ERC-777-style) into a fork.
 No unbounded loops exist: fulfillment is O(1) regardless of request count
 (D4), settlement is lazy per-user. Spamming tiny requests costs only the
 spammer. The single-pending-slot rule bounds per-user storage to O(1).
+Residual (accepted): anyone can gift a request to an arbitrary `controller`
+(spec-standard pattern — `owner` pays, `controller` owns the claim), which
+occupies the controller's single slot for that direction. The "damage" is
+donated funds plus, at worst, a request revert during the narrow
+CLOSED-unfulfilled window; the slot self-frees by auto-roll at the next
+touchpoint.
 
 ### T10 — Oracle manipulation
 In the simulator the oracle admin is trusted (T5-like assumption). In

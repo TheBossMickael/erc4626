@@ -46,9 +46,13 @@ redeem-heavy, netted, one-sided, empty); compare price before/after.
 > The escrow holds exactly what is owed, at all times.
 
 - `USDC.balanceOf(escrow) == Σ open/closed pending deposit assets
-  + Σ unclaimed claimableAssets`
+  + Σ unclaimed redeem-side claimable assets (+ accumulated payout dust)`
 - `vault.balanceOf(escrow) == Σ open/closed pending redeem shares
-  + Σ unclaimed claimableShares` (+ accumulated dust)
+  + Σ unclaimed deposit-side claimable shares (+ accumulated share dust)`
+
+Dust accrues on **both** sides — `sharesMinted − Σ entitled shares` and
+`assetsSetAside − Σ entitled payouts` — and must be ghost-tracked per epoch
+for the equality to be exact.
 
 Equality, not `≥`: any drift in either direction signals a bug (leak or
 double-count).

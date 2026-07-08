@@ -71,12 +71,17 @@ struct UserSlot {                 // one per user per direction (D4)
     uint64  epochId;              // epoch the pending belongs to
 }
 
+struct ClaimBalance {             // post-roll claimable ledger, per direction
+    uint256 assets;               // deposit side: fulfilled assets in
+    uint256 shares;               //               shares they earned
+}                                 // redeem side: mirrored (shares in, assets earned)
+
 mapping(uint256 => Epoch)   epochs;
-uint256                     currentEpochId;      // the OPEN epoch
+uint256                     currentEpochId;      // the OPEN epoch (ids start at 1; 0 = empty-slot sentinel)
 mapping(address => UserSlot) depositSlot;
 mapping(address => UserSlot) redeemSlot;
-mapping(address => uint256)  claimableShares;    // deposit side, post-roll
-mapping(address => uint256)  claimableAssets;    // redeem side, post-roll
+mapping(address => ClaimBalance) claimableDeposit;
+mapping(address => ClaimBalance) claimableRedeem;
 mapping(address => mapping(address => bool)) isOperator;  // 7540 operators
 ```
 
@@ -84,6 +89,15 @@ Per-user entitlements are **pro-rata against the batch result**, not against
 a stored price: `userShares = userAssets × sharesMinted / totalDepositAssets`
 (floor). This avoids compounding a rounding error through a stored
 price and keeps `Σ user claims ≤ batch result` trivially true (invariant I2).
+
+The claimable ledger tracks **both denominations** per direction. This is
+forced by the claim surface itself: the spec mandates claims in either unit
+(`deposit(assets)` AND `mint(shares)`; `withdraw(assets)` AND
+`redeem(shares)`), partial claims are allowed, and the lazy roll aggregates
+entitlements from epochs settled at *different* rates — once merged, one
+denomination can only be recovered from the other pro-rata against this
+stored pair. A single-denomination ledger cannot answer `maxDeposit`
+(assets) and `maxMint` (shares) simultaneously.
 
 ## `fulfillEpoch()` — exact order of operations
 
@@ -150,10 +164,33 @@ controller-overloaded forms:
 - `withdraw(assets, receiver, controller)` / `redeem(shares, receiver,
   controller)` transfer reserved USDC from escrow against `claimableAssets`.
 - Caller rule (spec): `msg.sender` must be the `controller` or an approved
-  operator of the controller.
+  operator of the controller. The ERC-20 share-allowance path of plain
+  ERC-4626 `withdraw`/`redeem` does **not** apply to claims (spec): shares
+  were escrowed at request time.
+- Partial-claim rounding (T3 policy applied to the claim layer): amounts
+  *paid out* round down, amounts *consumed* from the ledger round up — always
+  in the vault's favor. A full claim (`amount == ledger balance`) takes the
+  exact remaining pair, so repeated partial claims strand nothing.
+- At claim time the `Deposit` event's first parameter is the **controller**
+  (spec-mandated), not `msg.sender` (which may be a mere operator).
 - `maxDeposit/maxMint(controller)` mirror deposit-side claimables;
   `maxWithdraw/maxRedeem(controller)` mirror redeem-side claimables. All four
   `preview*` revert.
+- `claimableDepositRequest`/`claimableRedeemRequest` ignore their `requestId`
+  argument: after the roll, entitlements from different epochs merge into one
+  fungible ledger and per-epoch attribution no longer exists (fungible-
+  request model, explicitly allowed by the spec). `max*` are the canonical
+  claimable amounts. `pending*Request` DO match `requestId` exactly — a
+  pending sits in one known epoch.
+
+## Cancellation mechanics (extension, D7)
+
+`cancelDepositRequest(controller)` / `cancelRedeemRequest(controller)`:
+callable by the controller or its approved operator, only while the slot's
+epoch is OPEN (after the roll — a fulfilled pending is claimable, not
+cancelable; a CLOSED one is binding). The full pending amount is refunded
+**to the controller**: the controller owns the request per spec, and the
+original funds source (`owner`) is deliberately not stored.
 
 ## Request functions — caller rules (spec)
 
@@ -179,3 +216,4 @@ redeem) — the vault is *fully* asynchronous — plus ERC-165 itself.
 | Epoch machine, cut-off | not specified (implementation freedom) | two-phase Open/Closed/Fulfilled | forward pricing + binding orders (D5) |
 | Requests per user | unlimited (spec silent) | one pending slot per direction, auto-roll (D4) | O(1) everything, no epoch enumeration; revert window is the CLOSED phase only |
 | Request transferability | non-transferable by default | non-transferable | default kept |
+| `claimable*Request(requestId, …)` | per-requestId amounts (fungible model allowed) | aggregate, `requestId` ignored | the lazy roll merges epochs into one fungible ledger; `max*` are canonical |
