@@ -55,6 +55,11 @@ way a maturing T-Bill does).
 *Why:* this is how a real fund is structured (securities in portfolio, an
 oracle/accountant pricing them), it makes solvency invariants exact, and it
 *narratively justifies* async redemptions: selling T-Bills settles T+1.
+*Implementation notes:* `TBillToken` uses 6 decimals, deliberately matching
+the asset — every value conversion is then one 1e18-scaled multiplication,
+with no decimals-bridging term to get wrong; the interest shortfall at
+divestment is minted as USDC by the mock issuer (the simulation's yield
+source).
 *Rejected:* virtual accrual index over principal (yield "appears from
 nowhere", vault balance no longer the source of truth); direct
 price-per-share oracle (bypasses OZ accounting, contradicts D1).
