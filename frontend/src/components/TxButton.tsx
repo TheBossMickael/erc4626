@@ -43,6 +43,11 @@ export function TxButton({
     if (receipt.isSuccess) {
       queryClient.invalidateQueries();
       onConfirmed?.();
+      // Clear the confirmation note after a beat — left on screen forever it
+      // reads as the UI being stuck on the previous transaction. The cleanup
+      // cancels the timer if a new tx starts on this button meanwhile.
+      const t = setTimeout(reset, 8_000);
+      return () => clearTimeout(t);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [receipt.isSuccess]);
