@@ -11,6 +11,7 @@ contracts/broadcast/**/dry-run/
 # Env / secrets
 .env
 .env.*
+!.env.example
 
 # Frontend / node
 node_modules/

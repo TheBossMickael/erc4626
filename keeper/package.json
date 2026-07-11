@@ -1,0 +1,12 @@
+{
+  "name": "rwa-vault-keeper",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "keeper": "node keeper.mjs"
+  },
+  "dependencies": {
+    "viem": "^2.21.0"
+  }
+}

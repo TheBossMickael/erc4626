@@ -1,0 +1,37 @@
+# Demo keeper — settles pending epochs every ~30 min (≈ one simulated month
+# at the oracle's demo time scale). See keeper/keeper.mjs for the policy.
+#
+# Free-tier caveats: scheduled runs can lag several minutes under load, and
+# GitHub disables schedules after 60 days without repo activity (any commit
+# re-arms it). Both are acceptable for a testnet demo.
+name: keeper
+
+on:
+  schedule:
+    - cron: "*/30 * * * *"
+  workflow_dispatch: # manual trigger for testing
+
+concurrency:
+  group: keeper
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  turn-the-cycle:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: keeper
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm ci
+      - run: node keeper.mjs
+        env:
+          RPC_URL: ${{ secrets.SEPOLIA_RPC_URL }}
+          KEEPER_PRIVATE_KEY: ${{ secrets.KEEPER_PRIVATE_KEY }}
