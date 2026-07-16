@@ -81,7 +81,7 @@ async function send(functionName, args = []) {
 const readVault = (functionName, args = []) =>
   publicClient.readContract({ address: VAULT, abi: vaultAbi, functionName, args });
 
-/** Divest just enough (plus 0.5% accrual buffer) for the payout, then fulfill. */
+/** Divest just enough (plus 0.2% accrual headroom) for the payout, then fulfill. */
 async function settle(epochId, totalDepositAssets, totalRedeemShares) {
   const [estAside, cash, price] = await Promise.all([
     readVault("convertToAssets", [totalRedeemShares]),

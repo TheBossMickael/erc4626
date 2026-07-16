@@ -44,7 +44,7 @@ contract TBillToken is ERC20 {
     /// @notice Buy T-Bills at the current oracle price.
     /// @dev Floor division: the buyer bears the dust, the issuer never
     /// over-issues — same rounding policy as the vault (in favor of the
-    /// system, docs/invariants.md I2).
+    /// system, docs/invariants-and-testing.md I2).
     function subscribe(uint256 usdcAmount) external returns (uint256 tbillAmount) {
         tbillAmount = (usdcAmount * oracle.PRICE_SCALE()) / oracle.price();
         if (tbillAmount == 0) revert AmountRoundsToZero();

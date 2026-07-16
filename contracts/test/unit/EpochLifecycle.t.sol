@@ -8,7 +8,7 @@ import {IERC20Errors} from "@openzeppelin/contracts/interfaces/draft-IERC6093.so
 /// @notice The epoch state machine (I9 unit side) and `fulfillEpoch()`:
 /// empty epochs, one-sided epochs, netting, the short-of-cash revert before
 /// `divest`, portfolio management, and the I3 price-continuity unit fuzz
-/// over random epoch compositions (docs/invariants.md).
+/// over random epoch compositions (docs/invariants-and-testing.md).
 contract EpochLifecycleTest is BaseTest {
     // ==================================================================
     // State machine (I9)

@@ -1,9 +1,13 @@
 # Threat Model
 
-Scope: the on-chain system (`RWAVault`, `Escrow`, `NAVOracle`, mocks). The
-frontend and deployment keys are out of scope except where noted. This is a
-**simulator**: some trust assumptions are deliberate simplifications of
-production infrastructure and are labeled as such.
+Scope: the full system — the on-chain contracts (`RWAVault`, `Escrow`,
+`NAVOracle`, mocks) **and** the operational layer built in phase 5 (demo
+keeper, hosted frontend, RPC keys). This is a **simulator**: some trust
+assumptions are deliberate simplifications of production infrastructure and
+are labeled as such, with the production hardening they stand in for.
+
+Cross-references: D• = [design-decisions.md](design-decisions.md),
+I• = [invariants-and-testing.md](invariants-and-testing.md).
 
 ## Actors & trust assumptions
 
@@ -12,6 +16,7 @@ production infrastructure and are labeled as such.
 | Investor | untrusted | request, cancel (pre-cut-off), claim, delegate to 7540 operators | the adversary of interest |
 | 7540 operator | trusted *by their controller only* | act on behalf of one user | scoped by `setOperator` |
 | Fund manager (`MANAGER_ROLE`) | trusted for **liveness and timing**, not pricing | `closeEpoch`, `fulfillEpoch`, `invest`, `divest` | cannot set prices: NAV = oracle + accounting. Mirrors a real transfer agent |
+| Demo keeper | trusted for **liveness and timing** — same class as the manager | `MANAGER_ROLE` only | dedicated EOA, key in GitHub Actions secrets; see *The operational layer* below |
 | Oracle admin | trusted | rate, time scale, mark-to-market shocks | simulator stand-in for the fund accountant / custodian NAV feed |
 | Deployer / admin | trusted | role management | demo-grade key handling |
 
@@ -37,7 +42,9 @@ batch or pays out more than set aside.*
 **Mitigation:** all divisions floor in the vault's favor; per-user
 entitlements are pro-rata against the *recorded batch result*, so
 `Σ user claims ≤ batch` holds term by term (invariant I2). Dust is
-unclaimable and bounded by 1 wei per user per epoch.
+unclaimable and bounded by 1 wei per user per epoch. At the claim layer:
+outputs floor, ledger consumption ceils, full claims take the exact
+remaining pair so nothing is stranded.
 
 ### T4 — Cancellation timing (loss dodging)
 *NAV drops between request and settlement; the user cancels to dodge a loss
@@ -99,10 +106,53 @@ has no other external surface. Access-control tested (I8). The escrow holds
 exactly the sum of outstanding pendings and unclaimed claimables (I4) — any
 drift is a red flag caught by the solvency invariant.
 
+### The operational layer — keeper key, RPC keys, faucet
+
+Phase 5 wrapped an operated demo around the contracts; none of its threats
+reaches pricing or custody:
+
+- **Keeper hot key** (GitHub Actions secret, signs unattended — assume it
+  leaks): the keeper is a dedicated EOA holding `MANAGER_ROLE` and nothing
+  else, so a thief inherits exactly the manager's T5 powers —
+  liveness/timing griefing and NAV-neutral allocation churn — never
+  custody, prices, or role administration. Recovery is one `revokeRole`;
+  the keeper's policy is public code in `keeper/keeper.mjs`.
+- **Client-side RPC key**: ships in the JS bundle by design (static site,
+  no backend to hide it behind). Read-only on a public testnet — the asset
+  at risk is a free-tier quota, not funds. The domain allowlist is abuse
+  friction, not a security boundary; the keeper uses a separate key
+  confined to CI secrets, so neither key can break the other's function.
+- **Open faucet**: a whale minting absurd MockUSDC dilutes no one —
+  deposits price at the epoch strike (T1/T2); they just own most of a
+  bigger fund. The damage is cosmetic AUM distortion; a capped faucet is
+  trivial hardening if it ever matters.
+
 ## Residual risks (accepted, V1)
 
 1. Manager liveness: CLOSED epoch never fulfilled → pendings locked until
    fulfillment (T5). Demo-acceptable; hardening listed.
 2. Pre-cut-off cancel freedom mirrors real funds (T4 residual).
 3. Simulated oracle: no staleness/deviation guards (T10).
-4. Demo key management: single EOA may hold several roles.
+4. Demo key management: single EOA may hold several roles (the deployer is
+   admin + manager + oracle owner).
+5. Keeper key theft ⇒ cycle/allocation griefing only; accepted against
+   the value of unattended demo operation.
+6. Public RPC dependency: the NAV timeline's history scan relies on public
+   endpoints — an availability risk only, never correctness: all data is
+   re-derived from the chain on every load.
+7. Faucet bloating can make the demo's numbers ugly, not wrong.
+
+## If this went to production
+
+In priority order — each replaces a labeled simulation shortcut:
+
+1. **NAV feed** (T10): signed accountant feed, staleness + deviation
+   bounds, dispute window.
+2. **Cycle liveness** (T5, keeper key): scheduled cut-offs or permissionless
+   fulfillment after a timeout; manager under multisig/timelock.
+3. **Key segregation** (residual 4): distinct admin / manager / oracle
+   keys, hardware-backed; keeper key rotation.
+4. **Access control on the asset side** (open faucet): real USDC, KYC'd
+   transfer restrictions if the share must be a security.
+5. **RPC & data layer** (residual 6): server-side RPC proxy, indexer
+   instead of client-side event replay.

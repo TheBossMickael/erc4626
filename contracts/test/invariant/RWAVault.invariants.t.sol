@@ -5,7 +5,7 @@ import {BaseTest} from "../helpers/BaseTest.sol";
 import {Handler} from "./Handler.sol";
 import {RWAVault} from "../../src/RWAVault.sol";
 
-/// @notice Fuzzed invariant campaign for I1–I9 (docs/invariants.md).
+/// @notice Fuzzed invariant campaign for I1–I9 (docs/invariants-and-testing.md).
 ///
 /// Where each invariant is checked:
 ///  - I1 (epoch price uniqueness)  — pairwise assertion at every fulfillment (Handler)

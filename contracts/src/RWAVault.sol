@@ -40,7 +40,7 @@ import {TBillToken} from "./mocks/TBillToken.sol";
 /// cannot choose prices (NAV = oracle + accounting). ERC-7540 "operators" are
 /// user-level delegates, unrelated to the manager.
 /// @dev Spec references: https://eips.ethereum.org/EIPS/eip-7540 and
-/// docs/erc7540-architecture.md (mechanical reference this file implements).
+/// docs/contracts-tour.md (the guided tour of this contract's mechanics).
 contract RWAVault is
     ERC4626,
     AccessControl,
@@ -76,7 +76,7 @@ contract RWAVault is
     uint256 private immutable _priceScale;
 
     // ---------------------------------------------------------------------
-    // Epoch machine storage (docs/erc7540-architecture.md, storage sketch)
+    // Epoch machine storage (docs/contracts-tour.md, "The epoch machine")
     // ---------------------------------------------------------------------
 
     struct Epoch {
@@ -301,7 +301,7 @@ contract RWAVault is
     /// per spec the controller owns the request — the `owner` of the funds
     /// is not recorded. Callable by the controller or its operator.
     /// Cancellation is out of ERC-7540's scope; this synchronous pre-cut-off
-    /// form is a documented divergence (see erc7540-architecture.md).
+    /// form is a documented divergence (see docs/contracts-tour.md).
     function cancelDepositRequest(address controller) external nonReentrant returns (uint256 assets) {
         _requireControllerOrOperator(controller);
         _rollDeposit(controller); // a fulfilled pending is claimable, not cancelable
@@ -359,7 +359,7 @@ contract RWAVault is
     /// @notice Settle the CLOSED epoch: one NAV, both sides, O(1) whatever
     /// the number of requests (D4/D6). Forward pricing: this is the first
     /// moment the epoch's execution price exists.
-    /// @dev Exact operation order per docs/erc7540-architecture.md — the
+    /// @dev Exact operation order per docs/contracts-tour.md — the
     /// price snapshot PRECEDES any movement of epoch funds, which is what
     /// makes it honest:
     ///   1. strike: both batch conversions read the same pre-settlement

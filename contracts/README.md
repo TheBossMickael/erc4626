@@ -1,66 +1,19 @@
-## Foundry
+# Contracts — Foundry project
 
-**Foundry is a blazing fast, portable and modular toolkit for Ethereum application development written in Rust.**
+Solidity sources of the RWA vault. The full story — architecture, decision
+log, invariants, threat model — lives in the [repo README](../README.md)
+and [/docs](../docs).
 
-Foundry consists of:
-
-- **Forge**: Ethereum testing framework (like Truffle, Hardhat and DappTools).
-- **Cast**: Swiss army knife for interacting with EVM smart contracts, sending transactions and getting chain data.
-- **Anvil**: Local Ethereum node, akin to Ganache, Hardhat Network.
-- **Chisel**: Fast, utilitarian, and verbose solidity REPL.
-
-## Documentation
-
-https://book.getfoundry.sh/
-
-## Usage
-
-### Build
-
-```shell
-$ forge build
+```bash
+forge build
+forge test        # 77 tests: unit lifecycle + fuzzed invariants I1–I9
+forge fmt --check
 ```
 
-### Test
+OpenZeppelin Contracts v5.2.0 is pinned as a submodule in `lib/`. The
+optimizer settings in `foundry.toml` are deployment-critical — unoptimized,
+the vault's runtime bytecode exceeds the EIP-170 size limit; don't change
+them.
 
-```shell
-$ forge test
-```
-
-### Format
-
-```shell
-$ forge fmt
-```
-
-### Gas Snapshots
-
-```shell
-$ forge snapshot
-```
-
-### Anvil
-
-```shell
-$ anvil
-```
-
-### Deploy
-
-```shell
-$ forge script script/Counter.s.sol:CounterScript --rpc-url <your_rpc_url> --private-key <your_private_key>
-```
-
-### Cast
-
-```shell
-$ cast <subcommand>
-```
-
-### Help
-
-```shell
-$ forge --help
-$ anvil --help
-$ cast --help
-```
+Deployment: `script/Deploy.s.sol`; the live Sepolia record is in
+[docs/operations.md](../docs/operations.md).
