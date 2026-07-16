@@ -65,7 +65,7 @@ export default function App() {
           <a href={`${ETHERSCAN}/address/${ADDRESSES.vault}`} target="_blank" rel="noreferrer">
             Vault {shortAddr(ADDRESSES.vault)} ↗
           </a>
-          <a href="https://github.com/TheBossMickael/erc4626" target="_blank" rel="noreferrer">
+          <a href="https://github.com/TheBossMickael/tbill-fund" target="_blank" rel="noreferrer">
             Source ↗
           </a>
           <a href="https://eips.ethereum.org/EIPS/eip-7540" target="_blank" rel="noreferrer">

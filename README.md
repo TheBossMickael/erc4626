@@ -143,5 +143,5 @@ hardening would replace them.
 ---
 
 If you spot something off, disagree with a design choice, or have an idea,
-[open an issue](https://github.com/TheBossMickael/erc4626/issues) — I'm
+[open an issue](https://github.com/TheBossMickael/tbill-fund/issues) — I'm
 happy to discuss any of it.
